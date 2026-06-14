@@ -1,33 +1,43 @@
-# GST Collections as a Leading Indicator for FMCG Stock Returns
+# GST Indicator Model for FMCG Stock Returns
 
-A time-series analysis of whether monthly GST data can predict quarterly stock returns for India's major FMCG companies — built with Python, PostgreSQL, and Power BI.
-
----
-
-## The Question
-
-GST is a consumption tax. When people spend more on everyday goods — soaps, biscuits, packaged food, shampoo — GST collections go up. FMCG companies sell exactly those goods. So the question I wanted to test was: does a rise in GST collections in one quarter actually show up in FMCG stock returns the following quarter?
-
-It sounds straightforward but there are real complications. GST data is aggregate — you get total collections, not FMCG-specific ones. It's a proxy, not a direct signal. And stock prices react to dozens of things at once, so isolating any single variable is hard. The project accounts for all of that.
+A time-series analysis of whether monthly GST data can predict quarterly stock returns for India's major FMCG companies, built with Python, PostgreSQL, and Power BI.
 
 ---
 
-## What I Found
+## Research Question
 
-The short version: there is a detectable signal, but it is subtle and depends heavily on the lag.
+GST is a consumption tax. When spending on everyday goods rises (soaps, biscuits, packaged food, shampoo), GST collections increase. FMCG companies sell exactly those goods, which raises a testable question: does a rise in GST collections in one quarter predict FMCG stock returns in the following quarter?
 
-Running a pooled OLS regression across all seven companies and 30 quarters, using Lag 1 (prior quarter GST growth) and Lag 2 (two quarters prior) as predictors:
+The analysis accounts for real complications. GST data is aggregate, capturing total collections rather than FMCG-specific ones, and functions as a proxy rather than a direct signal. Stock prices also respond to many variables simultaneously, making any single-variable analysis inherently limited in its explanatory scope.
 
-- The model is statistically significant — F-test p-value of 0.0003
-- R² = 0.094, meaning GST lags account for roughly 9.4% of the variance in stock returns
-- Lag 1 coefficient is positive (0.125, p = 0.009): stronger GST growth one quarter ago predicts better stock returns this quarter
-- Lag 2 coefficient is negative (−0.168, p = 0.0002): that same earlier GST growth predicts a pullback two quarters out
+---
 
-The negative Lag 2 coefficient is the most interesting part. It suggests markets partially price in the GST signal one quarter ahead, then correct as the effect fades. I'm calling this an echo pattern in the write-up.
+## Key Findings
 
-Granger causality tests came back without clear evidence of causality at the per-company level, which is expected — with only 25 usable observations per company, the test simply doesn't have enough power. That's a limitation I've documented.
+A pooled OLS regression was run across seven companies and 30 quarters, using Lag 1 (prior quarter GST growth) and Lag 2 (two quarters prior) as predictors.
 
-The COVID quarters (2020 Q2 and Q3) are a structural break. GST collapsed 42% YoY in Q2 2020 but FMCG stocks like Britannia and Godrej Consumer actually surged — people panic-bought packaged food. Excluding those two quarters makes Lag 1 significant at p = 0.010. I run both versions in the analysis.
+### OLS Regression
+
+- **F-test p-value: 0.0003** -- The model is statistically significant.
+- **R² = 0.094** -- GST lags account for approximately 9.4% of the variance in stock returns.
+- **Lag 1 coefficient: +0.125 (p = 0.009)** -- Stronger GST growth one quarter prior predicts higher FMCG stock returns in the following quarter.
+- **Lag 2 coefficient: -0.168 (p = 0.0002)** -- The same earlier GST growth predicts a correction two quarters out. Markets appear to partially price in the signal one quarter ahead and then correct as the effect fades. This pattern is referred to as the echo effect in the analysis.
+
+### Granger Causality
+
+- No clear evidence of causality was found at the per-company level.
+- With only 25 usable observations per company, the tests lack sufficient statistical power. This is a documented limitation of the analysis.
+
+### Structural Break: COVID Quarters
+
+- 2020 Q2 and Q3 constitute a structural break in the data.
+- GST collections collapsed 42% year-on-year in Q2 2020, yet FMCG stocks such as Britannia and Godrej Consumer surged, driven by panic-buying of packaged food.
+- Excluding these two quarters strengthens Lag 1 significance to p = 0.010. Both versions (full dataset and COVID-excluded) are reported in the analysis.
+
+### Rolling Correlations
+
+- An 8-quarter rolling correlation was computed to assess whether the signal held consistently across the full period.
+- The relationship between GST growth and FMCG returns is not stable over time, shifting across different macroeconomic regimes. This is treated as a finding in its own right.
 
 ---
 
@@ -35,19 +45,28 @@ The COVID quarters (2020 Q2 and Q3) are a structural break. GST collapsed 42% Yo
 
 | Source | What it covers | Period |
 |---|---|---|
-| GST.gov.in / Kaggle | Monthly state-wise GST collections | Jul 2017 – Dec 2024 |
-| Yahoo Finance (yfinance) | Daily OHLCV for 7 NSE-listed FMCG stocks | Jul 2017 – Dec 2024 |
-| Screener.in | Annual P&L for 7 companies | FY2016 – FY2025 |
+| GST.gov.in / Kaggle | Monthly state-wise GST collections | Jul 2017 -- Dec 2024 |
+| Yahoo Finance (yfinance) | Daily OHLCV for 7 NSE-listed FMCG stocks | Jul 2017 -- Dec 2024 |
+| Screener.in | Annual P&L for 7 companies | FY2016 -- FY2025 |
 
 **Companies:** HUL, ITC, Nestle India, Britannia, Dabur, Marico, Godrej Consumer Products
 
-One thing worth being upfront about: quarterly revenue data from Screener only goes back to late 2023, which is too short for statistical analysis. So the primary dependent variable throughout is quarterly stock returns computed from daily prices, not reported revenues. The annual revenue data (which goes back to FY2017) is used as a supplementary check.
+Quarterly revenue data from Screener.in extends only to late 2023, which is insufficient for the full analysis window. The primary dependent variable is therefore quarterly stock returns computed from daily price data, covering the complete seven-year period. Annual revenue data (FY2017 onwards) is used as a supplementary check.
 
 ---
 
 ## Stack
 
-Python for data collection, cleaning, and statistical analysis. PostgreSQL (via psycopg2 + SQLAlchemy) for storage and querying. DBeaver as the SQL client. Power BI Desktop for the dashboard.
+- **Python**
+  - `pandas`, `numpy` -- data processing and numerical computation
+  - `yfinance` -- stock price collection
+  - `statsmodels` -- OLS regression and Granger causality tests
+  - `scipy` -- Pearson correlation
+  - `matplotlib`, `seaborn` -- chart generation
+  - `openpyxl` -- reading Screener.in Excel exports
+- **PostgreSQL** (via `psycopg2` + `SQLAlchemy`) -- storage and querying
+- **DBeaver** -- SQL client
+- **Power BI Desktop** -- dashboard and visualisation
 
 ---
 
@@ -85,21 +104,21 @@ gst_fmcg-indicator-analysis/
 
 ## How It Was Built
 
-The project ran across seven phases. Here's what each one actually involved.
+The project ran across seven phases.
 
-**Phase 1 — Environment setup.** Python 3.11, PostgreSQL, DBeaver, Power BI Desktop. Standard stuff. The only decision worth mentioning is choosing PostgreSQL over SQLite — it's what professional analyst environments actually use, and it meant the SQL queries could use proper data types (`DATE`, `NUMERIC`, `SERIAL`) rather than SQLite's loosely typed equivalents.
+**Phase 1 -- Environment setup.** Python 3.11, PostgreSQL, DBeaver, and Power BI Desktop. PostgreSQL was chosen over SQLite to align with professional analyst environments, enabling the use of proper data types (`DATE`, `NUMERIC`, `SERIAL`) rather than SQLite's loosely typed equivalents.
 
-**Phase 2 — Data collection.** GST data came from Kaggle as nine separate CSV files, one per financial year (2017-18 through 2025-26). Stock prices were pulled using `yfinance` for all seven companies from July 2017 to December 2024. The FMCG revenue data from Screener.in turned out to be the messiest part — the quarterly export only goes back to late 2023, which is not enough for analysis. That's what pushed the primary dependent variable toward stock returns rather than reported revenues, since price data goes back the full seven years.
+**Phase 2 -- Data collection.** GST data came from Kaggle as nine separate CSV files, one per financial year (2017-18 through 2025-26). Stock prices were collected using `yfinance` for all seven companies from July 2017 to December 2024. Quarterly revenue data from Screener.in extends only to late 2023, which is insufficient for the full analysis window. This is what directed the primary dependent variable toward stock returns rather than reported revenues, since price data covers the complete seven years.
 
-**Phase 3 — Data cleaning.** The GST CSVs have a five-row merged-cell header, state-wise columns, and comma-formatted numbers. Each file also labels its Grand Total row differently — older files say "Grand Total", the 2024-25 and 2025-26 files switched to "Domestic GST Collection - All India". The cleaning script handles both. Stock prices needed two metadata rows skipped before the actual OHLCV data started. Screener's Excel files had the P&L section starting at a different row offset per company, so the script searches by row label rather than relying on fixed offsets. Six cleaned CSVs came out the other end.
+**Phase 3 -- Data cleaning.** The GST CSVs carry a five-row merged-cell header, state-wise columns, and comma-formatted numbers. Each file also labels its Grand Total row differently: older files use "Grand Total", while the 2024-25 and 2025-26 files switched to "Domestic GST Collection - All India". The cleaning script handles both conventions. Stock prices required two metadata rows to be skipped before the OHLCV data began. Screener's Excel files had the P&L section starting at a different row offset per company, so the script searches by row label rather than relying on fixed offsets. Six cleaned CSVs were produced.
 
-**Phase 4 — SQL database.** Six tables loaded into PostgreSQL via SQLAlchemy. Nine query files in the `sql/` folder, written to cover progressively more complex concepts — starting from basic `SELECT` and `ORDER BY` through to `LAG()` window functions, CTEs, and rolling averages with `ROWS BETWEEN`. The lagged join in `q5_lagged_gst_vs_stock.sql` is the core analytical query the whole project is built around.
+**Phase 4 -- SQL database.** Six tables were loaded into PostgreSQL via SQLAlchemy. Nine query files in the `sql/` folder address progressively complex analytical questions, from basic aggregation through to `LAG()` window functions, CTEs, and rolling averages with `ROWS BETWEEN`. The lagged join in `q5_lagged_gst_vs_stock.sql` is the core analytical query the project is built around.
 
-**Phase 5 — Statistical analysis.** Pearson correlations tested across five lag lengths (Lag 0 through Lag 4) to find where the signal was strongest. Lag 1 and Lag 2 together went into a pooled OLS regression. Granger causality was tested per company using `statsmodels`, though with 25 observations per company the tests don't have much power. Rolling 8-quarter correlations were computed to see whether the signal was stable across the period (it isn't — which is itself a finding). Six charts saved to `outputs/charts/`.
+**Phase 5 -- Statistical analysis.** Pearson correlations were tested across five lag lengths (Lag 0 through Lag 4) to identify where the signal was strongest. Lag 1 and Lag 2 together went into a pooled OLS regression. Granger causality was tested per company using `statsmodels`. Rolling 8-quarter correlations were computed to assess whether the signal held consistently across the period. Six charts were saved to `outputs/charts/`.
 
-**Phase 6 — Power BI dashboard.** Rather than connecting Power BI directly to PostgreSQL (which requires an additional ODBC driver and is fiddly to set up), the analysis tables were pre-joined and pre-lagged in Python and exported as flat CSVs to `data/powerbi/`. This also meant the lagged values and rolling correlations — which are complex to reproduce in DAX — were already computed before the data hit Power BI. Three dashboard pages: GST Trends, FMCG Performance, and The Signal.
+**Phase 6 -- Power BI dashboard.** Rather than connecting Power BI directly to PostgreSQL (which requires an additional ODBC driver), the analysis tables were pre-joined and pre-lagged in Python and exported as flat CSVs to `data/powerbi/`. This ensured that lagged values and rolling correlations were already computed before the data reached Power BI, avoiding complex DAX reproduction. Three dashboard pages: GST Trends, FMCG Performance, and The Signal.
 
-**Phase 7 — Documentation.** This README, plus `FINDINGS.md` which goes deeper into the statistical interpretation and the interview talking points.
+**Phase 7 -- Documentation.** This README, plus `FINDINGS.md`, which covers the statistical interpretation in greater depth along with interview talking points.
 
 ---
 
@@ -127,34 +146,29 @@ Each script picks up where the previous one left off. `02` writes to `data/clean
 
 **4. SQL queries**
 
-Open DBeaver, connect to `localhost:5432/gst_fmcg`, and run any file from the `sql/` folder. `q5_lagged_gst_vs_stock.sql` is the one that matters most — it shows the lagged GST growth alongside stock returns for the following quarter.
+Open DBeaver, connect to `localhost:5432/gst_fmcg`, and run any file from the `sql/` folder. `q5_lagged_gst_vs_stock.sql` is the core query: it joins lagged GST growth values against subsequent quarterly stock returns, forming the basis of the regression analysis.
 
 **5. Power BI**
 
-Open Power BI Desktop → Get Data → load all six CSVs from `data/powerbi/` → follow the relationship setup and DAX measures in the project documentation.
+Open Power BI Desktop, load all six CSVs from `data/powerbi/` via Get Data, and follow the relationship setup and DAX measures in the project documentation.
 
 ---
 
-## SQL Concepts Covered
+## SQL Implementation
 
-The nine query files go from basic to advanced in a deliberate order. By the end you have working examples of window functions (`RANK`, `LAG`, rolling `AVG OVER`), CTEs, multi-table joins, and aggregate filtering — all on a real dataset with a genuine analytical question behind them.
+Nine query files cover the full analytical pipeline. The core query (`q5_lagged_gst_vs_stock.sql`) constructs lagged GST growth values alongside subsequent quarterly stock returns, forming the direct input for the OLS regression. Supporting queries implement window functions (`RANK`, `LAG`, rolling `AVG OVER`), CTEs, multi-table joins, and aggregate filtering across the full nine-year dataset.
 
 ---
 
 ## Limitations
 
-A few honest ones:
-
-The 30-quarter window is not long enough to make confident causal claims. GST was only introduced in July 2017, so that's a hard ceiling on the data. More quarters would strengthen everything.
-
-Granger causality needs more per-company observations than we have here. The pooled analysis is more informative than the per-company tests.
-
-This is a domestic GST aggregate — it captures all consumption, not just FMCG. The assumption that FMCG tracks aggregate consumption is reasonable but not perfect, and it breaks down during supply disruptions (COVID being the obvious case).
-
-Stock returns are also influenced by global risk-off periods, RBI rate decisions, and company-specific events — none of which are controlled for in this single-variable setup.
+- **Data window:** GST was introduced in July 2017, limiting the analysis to 30 quarters. A longer time series would strengthen the reliability of causal inferences.
+- **Granger causality power:** With only 25 observations per company, per-company causality tests lack sufficient statistical power. The pooled OLS analysis is more informative than the per-company tests.
+- **Aggregate proxy:** The GST figures used are national aggregates, not FMCG-specific. The assumption that FMCG revenues track aggregate consumption holds under normal conditions but breaks down during supply disruptions such as COVID-19.
+- **Omitted variables:** Stock returns are influenced by global risk sentiment, RBI monetary policy decisions, and company-specific events, none of which are controlled for in this single-variable framework.
 
 ---
 
 ## Author
 
-Muhsin — B.Tech Electronics & Instrumentation, MIT Manipal | Minor in Data Science
+Muhsin | B.Tech Electronics & Instrumentation, MIT Manipal | Minor in Data Science
