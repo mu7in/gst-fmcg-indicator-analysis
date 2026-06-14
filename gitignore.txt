@@ -1,0 +1,29 @@
+# Raw data files — too large and contain downloaded third-party data
+data/raw/
+
+# SQLite database (if used during development)
+*.db
+*.sqlite
+
+# PostgreSQL credentials — never commit these
+db_config.py
+.env
+
+# Power BI file (binary, doesn't version well)
+*.pbix
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/

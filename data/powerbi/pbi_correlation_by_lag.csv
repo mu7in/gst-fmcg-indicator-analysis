@@ -1,0 +1,6 @@
+lag_quarters,lag_label,pearson_r,p_value,significant,n_obs
+0,Lag 0 (same Q),-0.0329,0.6593,No,182
+1,Lag 1 (1Q prior),0.1446,0.0562,Marginal,175
+2,Lag 2 (2Q prior),-0.2354,0.0021,Yes,168
+3,Lag 3 (3Q prior),-0.1453,0.066,Marginal,161
+4,Lag 4 (4Q prior),0.0114,0.8884,No,154
