@@ -1,3 +1,6 @@
+#Documentation
+documentation/
+
 # Raw data files — too large and contain downloaded third-party data
 data/raw/
 
